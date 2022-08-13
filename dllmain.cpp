@@ -1,6 +1,9 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
 
+/**
+ * hook destination to source adress
+ */
 bool Detour32(void* src, void* dst, int len) {
     if (len < 5) return false;
 
@@ -18,6 +21,9 @@ bool Detour32(void* src, void* dst, int len) {
 
     return true;
 }
+/**
+ * revert changes of Detour32
+ */
 void unDetour(void* src) {
     const int instruction_len = 5;
     DWORD curProtection;
@@ -79,8 +85,8 @@ const char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 int* const hooverOverBuy = (int*)0X5FDF0A;
 char text[] = "autosell >000 PgUp/PgDn";
 /**
- * this for text drawin style.
- * Same text drawing style as for black bottom layer of sell and buy in market
+ * this for print_text method(__thiscall) defines text drawing style.
+ * Points at the same style as style for black bottom layer of sell and buy in market
  */
 int* const pthis_print_text = (int*)0x02157824;
 void printMyText() {
@@ -121,17 +127,18 @@ void __declspec(naked) hookOverGetSellValue() {
 }
 
 /**
- * Index n defining number of previously builded building
- * if 0==n then there is no market
- * if n>0 then there is market 
+ * Order n defined by number of previously built building
+ * if 0==n then the market doesn't exist 
+ * if n>0 then the market exists
+ * if market is destroyed its value is set to 0
  * Value is from line:
  * .text:004570B3 mov     eax, [ecx + ebp + 30EECh]
- * this line is used to get if previous market exist during building new
- * ecx(0x39F4) and ebx(0x0112B0B8) always have same value then result is always at same place 0x115F998
+ * this line is used to get if previous market exists during building new
+ * ecx(0x39F4) and ebx(0x0112B0B8) always have same value. Therefore, the eax is always at the same place 0x115F998
  */
-unsigned* const MarketIndex = (unsigned* const)0x115F998;
+unsigned* const MarketBuildOrder = (unsigned* const)0x115F998;
 inline bool doesMarketExist() {
-    return *MarketIndex > 0;
+    return *MarketBuildOrder > 0;
 }
 short* const inMenu = (short*)0x1FE7D2C;
 const short INTRAIDING = 0x39;
@@ -180,19 +187,19 @@ DWORD WINAPI MainThread(LPVOID param) {
     const unsigned sellFunctionValue = 0x5B7F0;
 
     const int hookLenght = 5;
-    DWORD hookAddress = 0x465AD6;
-    jumpback = hookAddress + hookLenght;
+    DWORD addressOfSellFunctionValueCall = 0x465AD6;
+    jumpback = addressOfSellFunctionValueCall + hookLenght;
     
     trade = (_Trade)(moduleBase + tradeFunctionAddress);
     print_text = (_Print_text)(moduleBase + printTextFunction);
     get_sell_value = (_Get_sell_value)(moduleBase + sellFunctionValue);
-    Detour32((void*)hookAddress, hookOverGetSellValue, hookLenght);
+    Detour32((void*)addressOfSellFunctionValueCall, hookOverGetSellValue, hookLenght);
 
     while (!(GetAsyncKeyState(VK_END))) {
         autoTrade();
     }
 
-    unDetour((void*)hookAddress);
+    unDetour((void*)addressOfSellFunctionValueCall);
     FreeLibraryAndExitThread((HMODULE)param, 0);
     return 0;
 }
