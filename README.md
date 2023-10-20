@@ -20,8 +20,8 @@ You need inject dll everytime you run the game.
 1. Injection can be removed from the game process by pressing the END key.
 
 ## To do
-* disable selling resources that are prohibited by the game scenario settings
-* reset mod settings on every load or start game
+* [ ] disable selling resources that are prohibited by the game scenario settings
+* [x] reset mod settings on every load or start game
 
 ## Screenshots 
 [autoTradeView]: AutoTrade view in menu

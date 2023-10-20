@@ -1,5 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
+#include <algorithm>
+#include <iterator>
 
 /**
  * hook destination to source adress
@@ -79,7 +81,8 @@ const unsigned char* getSelection() {
 /**
  * Every settings value corresponds to material in MATERIAL_IDS
  */
-unsigned short settings[] = { 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200 };
+unsigned short defaultSettingsValue = 200;
+unsigned short settings[20];
 
 const char digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 int* const hooverOverBuy = (int*)0X5FDF0A;
@@ -126,6 +129,28 @@ void __declspec(naked) hookOverGetSellValue() {
     }
 }
 
+void resetSettings() {
+    std::fill(std::begin(settings), std::end(settings), defaultSettingsValue);
+}
+
+DWORD jumpbackGameBegin;
+void __declspec(naked) hookGameBegin() {
+    __asm {
+        push eax
+        push ebx
+        push ecx
+        push edx
+        push esi
+        call resetSettings
+        pop esi
+        pop edx
+        pop ecx
+        pop ebx
+        pop eax
+        mov eax, 0x0000190
+        jmp[jumpbackGameBegin]
+    }
+}
 /**
  * Order n defined by number of previously built building
  * if 0==n then the market doesn't exist 
@@ -181,6 +206,8 @@ void autoTrade() {
 
 
 DWORD WINAPI MainThread(LPVOID param) {
+    resetSettings();
+
     uintptr_t moduleBase = (uintptr_t)GetModuleHandle(NULL);
     const unsigned tradeFunctionAddress = 0x0065E60;
     const unsigned printTextFunction = 0x72D60;
@@ -194,6 +221,10 @@ DWORD WINAPI MainThread(LPVOID param) {
     print_text = (_Print_text)(moduleBase + printTextFunction);
     get_sell_value = (_Get_sell_value)(moduleBase + sellFunctionValue);
     Detour32((void*)addressOfSellFunctionValueCall, hookOverGetSellValue, hookLenght);
+
+    const unsigned gameBegin = 0x04F6CF8;
+    jumpbackGameBegin = gameBegin + 5;
+    Detour32((void*)gameBegin, hookGameBegin, hookLenght);
 
     while (!(GetAsyncKeyState(VK_END))) {
         autoTrade();
