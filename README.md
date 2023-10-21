@@ -20,8 +20,11 @@ You need inject dll everytime you run the game.
 1. Injection can be removed from the game process by pressing the END key.
 
 ## To do
-* disable selling resources that are prohibited by the game scenario settings
-* reset mod settings on every load or start game
+* Simplify the mod's usage. Consider integrating it with UCP for easier installation.
+* Add support for multiple players. Currently, the mod only works for the red player in multiplayer mode.
+* Integrate autoselling with an in-game function, such as adding an item to stockpile. This should help with UCP integration.
+* Disable selling resources that are prohibited by the game scenario settings
+* Reset mod settings on every load or start game
 
 ## Screenshots 
 [autoTradeView]: AutoTrade view in menu
